@@ -7,7 +7,8 @@ module.exports = {
   'extends': [
     'eslint:recommended',
     'plugin:react/recommended',
-    'plugin:@typescript-eslint/recommended'
+    'plugin:@typescript-eslint/recommended',
+    'prettier'
   ],
   'parser': '@typescript-eslint/parser',
   'parserOptions': {
@@ -27,6 +28,7 @@ module.exports = {
       'before': false,
       'after': true
     }],
+    'no-multiple-empty-lines': ['warn', { 'max': 1 }],
     'indent': [2, 2, {
       'SwitchCase': 1
     }],
@@ -35,6 +37,8 @@ module.exports = {
       'avoidEscape': true,
       'allowTemplateLiterals': true
     }],
+    'no-trailing-spaces': 'error', // 行尾空格
+    'no-multi-spaces': 'error', // 多余空格
     'react/display-name': 0,
     'semi': 2,
     'space-infix-ops': 2,
