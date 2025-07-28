@@ -7,15 +7,17 @@ import './index.css';
 
 interface ModifyNavProps {
   ajaxToolsSwitchOn: boolean;
+  ajaxToolsExpandAll: boolean;
 
   onGroupAdd: () => void;
   updateAjaxToolsSwitchOn: (value: boolean) => void;
+  updateAjaxToolsExpandAll: (value: boolean) => void;
 }
 
 /** 导航栏 */
 const ModifyNav = (props: ModifyNavProps) => {
 
-  const {  ajaxToolsSwitchOn, onGroupAdd, updateAjaxToolsSwitchOn } = props;
+  const {  ajaxToolsSwitchOn, ajaxToolsExpandAll, onGroupAdd, updateAjaxToolsSwitchOn, updateAjaxToolsExpandAll } = props;
 
   return (
     <nav className="ajax-tools-iframe-action">
@@ -28,11 +30,11 @@ const ModifyNav = (props: ModifyNavProps) => {
           defaultChecked
           checkedChildren="Expand All"
           unCheckedChildren="Collapse All"
-          checked={ajaxToolsSwitchOn}
+          checked={ajaxToolsExpandAll}
           onChange={(value) => {
             if(!chrome.storage) return;
-            updateAjaxToolsSwitchOn(value);
-            chrome.storage.local.set({ ajaxToolsSwitchOn: value });
+            updateAjaxToolsExpandAll(value);
+            chrome.storage.local.set({ ajaxToolsExpandAll: value });
           }}
         />
         <Switch
