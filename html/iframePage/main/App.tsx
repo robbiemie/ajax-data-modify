@@ -14,8 +14,14 @@ import { CollapseHeader } from './components/CollapseHeader';
 function App() {
   const modifyDataModalRef = useRef<any>({});
 
-  const { ajaxToolsSwitchOn, ajaxToolsExpandAll, setAjaxToolsSwitchOn, setAjaxToolsExpandAll } =
-    useToggle();
+  const {
+    ajaxToolsSwitchOn,
+    ajaxToolsExpandAll,
+
+    setAjaxToolsSwitchOn,
+    setAjaxToolsExpandAll,
+    updateAjaxToolsSwitchOn,
+  } = useToggle();
 
   const {
     isRegistry,
@@ -41,7 +47,7 @@ function App() {
 
   if (chrome.storage && chrome.runtime && !isRegistry) {
     setIsRegistry(true);
-    console.log('ajax interceptor iframe 已开启监听');
+    console.log('ajax interceptor iframe 已开启监听 🟢');
     chrome.storage.local.get(
       ['ajaxDataList', 'ajaxToolsSwitchOn', 'ajaxToolsSkin', 'ajaxToolsExpandAll'],
       (result) => {
@@ -51,6 +57,7 @@ function App() {
           ajaxToolsSkin = 'light',
           ajaxToolsExpandAll
         } = result;
+        console.log('ajax interceptor iframe 本地结果值 🟩', result);
         if (ajaxDataList.length > 0) {
           setAjaxDataList(ajaxDataList);
         }
@@ -59,16 +66,22 @@ function App() {
         setAjaxToolsExpandAll(ajaxToolsExpandAll);
       }
     );
-    // 接收uNetwork/App.jsx发来的数据（在uNetWork面板中可以添加拦截数据更新页面）
-    chrome.runtime.onMessage.addListener((request) => {
-      const { type, to, ajaxDataList } = request;
-      if (type === 'ajaxTools_updatePage' && to === 'mainSettingSidePage') {
-        // console.log('【main/App.jsx】<-【uNetwork】Receive message:', request);
-        setAjaxDataList(ajaxDataList);
-        chrome.storage.local.set({ ajaxDataList });
-      }
-    });
   }
+
+  const updateAjaxToolsExpandAll = (value: boolean) => {
+    for(let index = 0 ;index < ajaxDataList.length; index++) {
+      const item = ajaxDataList[index] || {};
+      const { interfaceList = [] } = item;
+      const activeKeys = interfaceList.map(item => item.key);
+      if(!value) {
+        onCollapseChange(index, []);
+      } else {
+        onCollapseChange(index, activeKeys || []);
+      }
+    }
+    setAjaxToolsExpandAll(value);
+  };
+
   return (
     <div
       className="ajax-tools-iframe-container"
@@ -79,12 +92,8 @@ function App() {
       <ModifyNav
         ajaxToolsSwitchOn={ajaxToolsSwitchOn}
         ajaxToolsExpandAll={ajaxToolsExpandAll}
-        updateAjaxToolsSwitchOn={(value) => {
-          setAjaxToolsSwitchOn(value);
-        }}
-        updateAjaxToolsExpandAll={(value) => {
-          setAjaxToolsExpandAll(value);
-        }}
+        updateAjaxToolsSwitchOn={updateAjaxToolsSwitchOn}
+        updateAjaxToolsExpandAll={updateAjaxToolsExpandAll}
         onGroupAdd={onGroupAdd}
       />
 

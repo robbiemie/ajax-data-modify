@@ -9,8 +9,6 @@ export const useRegistry = () => {
   const [ajaxToolsSkin, setAjaxToolsSkin] = useState('light');
   const [ajaxDataList, setAjaxDataList] = useState(defaultAjaxDataList);
   const [isRegistry, setIsRegistry] = useState(false);
-  
-
 
   const onImportClick = async () => {
     if (!chrome.storage) return;
@@ -130,7 +128,7 @@ export const useRegistry = () => {
     if (responseEditorValue !== undefined) onInterfaceListChange(groupIndex, interfaceIndex, 'responseText', responseEditorValue);
     if (language !== undefined) onInterfaceListChange(groupIndex, interfaceIndex, 'language', language);
   };
-  
+
   // placement: top|bottom
   const onInterfaceMove = (groupIndex: number, interfaceIndex: number, placement: string ) => {
     if (!chrome.storage) return;
@@ -146,11 +144,10 @@ export const useRegistry = () => {
     chrome.storage.local.set({ ajaxDataList });
   };
 
-
-  return {  
-    isRegistry, 
-    ajaxDataList, 
-    ajaxToolsSkin, 
+  return {
+    isRegistry,
+    ajaxDataList,
+    ajaxToolsSkin,
 
     onGroupAdd,
     onGroupMove,
