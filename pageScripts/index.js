@@ -69,6 +69,7 @@ const ajax_tools_space = {
     });
     return interfaceList.find(({ open = true, matchType = 'normal', matchMethod, request }) => {
       const matchedMethod = !matchMethod || matchMethod === thisMethod.toUpperCase();
+      if(typeof thisRequestUrl !== 'string') return false
       const matchedRequest = request && (matchType === 'normal' ? thisRequestUrl.includes(request) : thisRequestUrl.match(ajax_tools_space.strToRegExp(request)));
       return open && matchedMethod && matchedRequest;
     });
