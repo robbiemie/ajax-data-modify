@@ -283,11 +283,15 @@ export const usePageHeaders = () => {
     }
     setQuickToggling(true);
     try {
-      const pairs = (hasConfiguredHeaders || !nextEnabled)
-        ? headerPairs
+      const latestMeta = await loadRuleMeta();
+      const latestHeaders = latestMeta?.headers || {};
+      const latestPairs = mapToHeaderPairs(latestHeaders);
+      const hasLatestHeaders = Object.keys(latestHeaders).length > 0;
+      const pairs = (hasLatestHeaders || !nextEnabled)
+        ? latestPairs
         : [createHeaderPair(DEFAULT_HEADER_KEY, DEFAULT_HEADER_VALUE)];
       const result = await save(pairs, nextEnabled);
-      if (result && !hasConfiguredHeaders && nextEnabled) {
+      if (result && !hasLatestHeaders && nextEnabled) {
         notification.success({
           message: 'Enabled quickly',
           description: `Added default header: ${DEFAULT_HEADER_KEY}: ${DEFAULT_HEADER_VALUE}`
@@ -297,7 +301,7 @@ export const usePageHeaders = () => {
     } finally {
       setQuickToggling(false);
     }
-  }, [headerPairs, hasConfiguredHeaders, pageOrigin, save]);
+  }, [loadRuleMeta, pageOrigin, save]);
 
   return {
     visible,
