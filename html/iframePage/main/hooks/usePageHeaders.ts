@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { notification } from 'antd';
 
 interface HeaderRuleItem {
@@ -43,6 +43,9 @@ const getPageOrigin = () => {
   const query = new URLSearchParams(window.location.search);
   return decodeURIComponent(query.get('pageOrigin') || '');
 };
+
+const DEFAULT_HEADER_KEY = 'x-debug-mode';
+const DEFAULT_HEADER_VALUE = '1';
 
 const createHeaderPair = (keyText = '', valueText = ''): HeaderPairItem => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -164,9 +167,12 @@ export const usePageHeaders = () => {
   const [visible, setVisible] = useState(false);
   const [enabled, setEnabled] = useState(true);
   const [headerPairs, setHeaderPairs] = useState<HeaderPairItem[]>([createHeaderPair()]);
+  const [quickEnabled, setQuickEnabled] = useState(false);
+  const [hasConfiguredHeaders, setHasConfiguredHeaders] = useState(false);
+  const [quickToggling, setQuickToggling] = useState(false);
   const pageOrigin = useMemo(() => getPageOrigin(), []);
 
-  const load = useCallback(async () => {
+  const loadRuleMeta = useCallback(async () => {
     if (!chrome.storage || !pageOrigin) return;
     const profiles = await getProfilesFromStorage();
     const { rule } = findRuleByOrigin(profiles, pageOrigin);
@@ -175,9 +181,23 @@ export const usePageHeaders = () => {
       acc[item.key] = item.value;
       return acc;
     }, {});
-    setEnabled(rule?.enabled ?? true);
-    setHeaderPairs(mapToHeaderPairs(headers));
+    const nextEnabled = rule?.enabled ?? false;
+    setQuickEnabled(nextEnabled);
+    setHasConfiguredHeaders(Object.keys(headers).length > 0);
+    return { headers, enabled: nextEnabled };
   }, [pageOrigin]);
+
+  const load = useCallback(async () => {
+    const meta = await loadRuleMeta();
+    if (!meta) return;
+    const { headers, enabled } = meta;
+    setEnabled(enabled);
+    setHeaderPairs(mapToHeaderPairs(headers));
+  }, [loadRuleMeta]);
+
+  useEffect(() => {
+    loadRuleMeta();
+  }, [loadRuleMeta]);
 
   const openModal = useCallback(async () => {
     await load();
@@ -225,6 +245,8 @@ export const usePageHeaders = () => {
       await syncPageHeadersRules();
       setEnabled(nextEnabled);
       setHeaderPairs(mapToHeaderPairs(normalizedHeaders));
+      setQuickEnabled(nextEnabled);
+      setHasConfiguredHeaders(Object.keys(normalizedHeaders).length > 0);
       setVisible(false);
       return true;
     } catch (error: any) {
@@ -251,9 +273,38 @@ export const usePageHeaders = () => {
     setHeaderPairs((prev) => prev.map((item) => item.id === id ? { ...item, [field]: value } : item));
   }, []);
 
+  const toggleQuickEnabled = useCallback(async (nextEnabled: boolean) => {
+    if (!pageOrigin) {
+      notification.error({
+        message: 'Toggle failed',
+        description: 'Current page origin is unavailable.'
+      });
+      return false;
+    }
+    setQuickToggling(true);
+    try {
+      const pairs = (hasConfiguredHeaders || !nextEnabled)
+        ? headerPairs
+        : [createHeaderPair(DEFAULT_HEADER_KEY, DEFAULT_HEADER_VALUE)];
+      const result = await save(pairs, nextEnabled);
+      if (result && !hasConfiguredHeaders && nextEnabled) {
+        notification.success({
+          message: 'Enabled quickly',
+          description: `Added default header: ${DEFAULT_HEADER_KEY}: ${DEFAULT_HEADER_VALUE}`
+        });
+      }
+      return result;
+    } finally {
+      setQuickToggling(false);
+    }
+  }, [headerPairs, hasConfiguredHeaders, pageOrigin, save]);
+
   return {
     visible,
     enabled,
+    quickEnabled,
+    hasConfiguredHeaders,
+    quickToggling,
     pageOrigin,
     headerPairs,
     setVisible,
@@ -263,5 +314,6 @@ export const usePageHeaders = () => {
     updateHeaderPair,
     openModal,
     save,
+    toggleQuickEnabled,
   };
 };

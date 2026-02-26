@@ -39,6 +39,9 @@ const PageHeadersModal = (props: PageHeadersModalProps) => {
           onChange={(v) => setEnabled(v)}
         />
       </div>
+      <div style={{ fontSize: 12, color: '#666', marginBottom: 10 }}>
+        Add key/value pairs below. Empty keys are ignored when saving.
+      </div>
       <div style={{ maxHeight: 'calc(100vh - 340px)', overflowY: 'auto', paddingRight: 4 }}>
         {headerPairs.map((item) => (
           <Space key={item.id} style={{ display: 'flex', marginBottom: 8 }} align="start">
@@ -52,6 +55,7 @@ const PageHeadersModal = (props: PageHeadersModalProps) => {
               placeholder="Header Value"
               value={item.valueText}
               onChange={(e) => updateHeaderPair(item.id, 'valueText', e.target.value)}
+              onPressEnter={addHeaderPair}
               style={{ width: 460 }}
             />
             <Button
@@ -62,9 +66,14 @@ const PageHeadersModal = (props: PageHeadersModalProps) => {
           </Space>
         ))}
       </div>
-      <Button type="dashed" icon={<PlusOutlined />} onClick={addHeaderPair}>
-        Add Header
-      </Button>
+      <Space>
+        <Button type="dashed" icon={<PlusOutlined />} onClick={addHeaderPair}>
+          Add Header
+        </Button>
+        <Button onClick={() => addHeaderPair()}>
+          Enter to Add Next
+        </Button>
+      </Space>
     </Modal>
   );
 };
