@@ -8,8 +8,10 @@ import ModifyNav from './components/ModifyNav';
 import RenderWrapper from './components/RenderWrapper';
 import { useToggle } from './hooks/useToggle';
 import { useRegistry } from './hooks/useRegistry';
+import { usePageHeaders } from './hooks/usePageHeaders';
 import { CollapseList } from './components/CollapseList';
 import { CollapseHeader } from './components/CollapseHeader';
+import PageHeadersModal from './components/PageHeadersModal';
 
 function App() {
   const modifyDataModalRef = useRef<any>({});
@@ -44,6 +46,19 @@ function App() {
     onInterfaceListChange,
     onGroupSummaryTextChange
   } = useRegistry();
+  const {
+    visible: pageHeadersVisible,
+    enabled: pageHeadersEnabled,
+    pageOrigin,
+    headerPairs,
+    setVisible: setPageHeadersVisible,
+    setEnabled: setPageHeadersEnabled,
+    addHeaderPair,
+    removeHeaderPair,
+    updateHeaderPair,
+    openModal: openPageHeadersModal,
+    save: savePageHeaders,
+  } = usePageHeaders();
 
   if (chrome.storage && chrome.runtime && !isRegistry) {
     setIsRegistry(true);
@@ -95,6 +110,7 @@ function App() {
         updateAjaxToolsSwitchOn={updateAjaxToolsSwitchOn}
         updateAjaxToolsExpandAll={updateAjaxToolsExpandAll}
         onGroupAdd={onGroupAdd}
+        onPageHeadersOpen={openPageHeadersModal}
       />
 
       <RenderWrapper
@@ -146,6 +162,18 @@ function App() {
       </RenderWrapper>
       <Footer />
       <ModifyDataModal ref={modifyDataModalRef} onSave={onInterfaceListSave} />
+      <PageHeadersModal
+        visible={pageHeadersVisible}
+        enabled={pageHeadersEnabled}
+        pageOrigin={pageOrigin}
+        headerPairs={headerPairs}
+        setVisible={setPageHeadersVisible}
+        setEnabled={setPageHeadersEnabled}
+        addHeaderPair={addHeaderPair}
+        removeHeaderPair={removeHeaderPair}
+        updateHeaderPair={updateHeaderPair}
+        onSave={savePageHeaders}
+      />
     </div>
   );
 }

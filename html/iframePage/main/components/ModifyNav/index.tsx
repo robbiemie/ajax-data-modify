@@ -10,6 +10,7 @@ interface ModifyNavProps {
   ajaxToolsExpandAll: boolean;
 
   onGroupAdd: () => void;
+  onPageHeadersOpen: () => void;
   updateAjaxToolsSwitchOn: (value: boolean) => void;
   updateAjaxToolsExpandAll: (value: boolean) => void;
 }
@@ -17,12 +18,13 @@ interface ModifyNavProps {
 /** 导航栏 */
 const ModifyNav = (props: ModifyNavProps) => {
 
-  const {  ajaxToolsSwitchOn, ajaxToolsExpandAll, onGroupAdd, updateAjaxToolsSwitchOn, updateAjaxToolsExpandAll } = props;
+  const { ajaxToolsSwitchOn, ajaxToolsExpandAll, onGroupAdd, onPageHeadersOpen, updateAjaxToolsSwitchOn, updateAjaxToolsExpandAll } = props;
 
   return (
     <nav className="ajax-tools-iframe-action">
       <Space>
         <Button size="small" type="primary" onClick={onGroupAdd}>Add Group</Button>
+        <Button size="small" onClick={onPageHeadersOpen}>Page Headers</Button>
       </Space>
       <div>
         <Switch
