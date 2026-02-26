@@ -4,6 +4,28 @@ const ajax_tools_space = {
   ajaxToolsSwitchOnNot200: true,
   ajaxDataList: [],
   originalXHR: window.XMLHttpRequest,
+  normalizeHeadersToObject: (headersInput) => {
+    if (!headersInput) return {};
+    if (headersInput instanceof Headers) {
+      const headers = {};
+      headersInput.forEach((value, key) => {
+        headers[key] = value;
+      });
+      return headers;
+    }
+    if (Array.isArray(headersInput)) {
+      return headersInput.reduce((acc, item) => {
+        if (Array.isArray(item) && item.length > 1) {
+          acc[item[0]] = item[1];
+        }
+        return acc;
+      }, {});
+    }
+    if (typeof headersInput === 'object') {
+      return Object.assign({}, headersInput);
+    }
+    return {};
+  },
   strToRegExp: (regStr) => {
     let regexp = new RegExp('');
     try {
@@ -166,23 +188,16 @@ const ajax_tools_space = {
       } else if (attr === 'setRequestHeader') {
         this.setRequestHeader = (...args) => {
           this._headerArgs = this._headerArgs ? Object.assign(this._headerArgs, {[args[0]]: args[1]}) : {[args[0]]: args[1]};
-          const matchedInterface = this._matchedInterface;
-          if (!(matchedInterface && matchedInterface.headers)) { // 没有要拦截修改或添加的header
-            xhr.setRequestHeader && xhr.setRequestHeader.apply(xhr, args);
-          }
         }
         continue;
       } else if (attr === 'send') {
         this.send = (...args) => {
           const matchedInterface = this._matchedInterface;
+          let ruleHeaders = {};
           if (matchedInterface) {
             if (matchedInterface.headers) {
-              const overrideHeaders = ajax_tools_space.getOverrideText(matchedInterface.headers, this._openArgs, true);
-              const headers = this._headerArgs ? Object.assign(this._headerArgs, overrideHeaders) : overrideHeaders;
-              Object.keys(headers).forEach((key) => {
-                xhr.setRequestHeader && xhr.setRequestHeader.apply(xhr, [key, headers[key]]);
-              })
-              console.info(`%cModified Headers：`, 'background-color: #ff8040; color: white;', overrideHeaders);
+              ruleHeaders = ajax_tools_space.getOverrideText(matchedInterface.headers, this._openArgs, true);
+              console.info(`%cModified Rule Headers：`, 'background-color: #ff8040; color: white;', ruleHeaders);
             }
             const [method] = this._openArgs;
             if (matchedInterface.requestPayloadText && method !== 'GET') { // Not GET
@@ -191,6 +206,10 @@ const ajax_tools_space = {
             }
             console.groupEnd();
           }
+          const headers = Object.assign({}, this._headerArgs || {}, ruleHeaders || {});
+          Object.keys(headers).forEach((key) => {
+            xhr.setRequestHeader && xhr.setRequestHeader.apply(xhr, [key, headers[key]]);
+          });
           this._sendArgs = args;
           xhr.send && xhr.send.apply(xhr, args);
         }
@@ -234,7 +253,11 @@ const ajax_tools_space = {
       return await reader.read().then(processData);
     }
     const [requestUrl, data={}] = args;
+    if (!args[1]) {
+      args[1] = data;
+    }
     const matchedInterface = ajax_tools_space.getMatchedInterface({thisRequestUrl: requestUrl, thisMethod: data && data.method});
+    let ruleHeaders = {};
     if (matchedInterface && args) {
       const { replacementUrl, replacementMethod, headers, requestPayloadText } = matchedInterface;
       if (replacementUrl || replacementMethod || headers || requestPayloadText) {
@@ -250,9 +273,8 @@ const ajax_tools_space = {
         console.info(`%cModified Method：`, 'background-color: #ff8040; color: white;', matchedInterface.replacementMethod);
       }
       if (matchedInterface.headers && args[1]) {
-        const overrideHeaders = ajax_tools_space.getOverrideText(matchedInterface.headers, data, true);
-        args[1].headers = Object.assign(args[1].headers, overrideHeaders);
-        console.info(`%cModified Headers：`, 'background-color: #ff8040; color: white;', overrideHeaders);
+        ruleHeaders = ajax_tools_space.getOverrideText(matchedInterface.headers, data, true);
+        console.info(`%cModified Rule Headers：`, 'background-color: #ff8040; color: white;', ruleHeaders);
       }
       if (matchedInterface.requestPayloadText && args[0] && data) {
         const {method='GET'} = data;
@@ -270,6 +292,12 @@ const ajax_tools_space = {
         }
       }
       console.groupEnd();
+    }
+    const currentHeaders = ajax_tools_space.normalizeHeadersToObject(data.headers);
+    const mergedHeaders = Object.assign({}, currentHeaders, ruleHeaders || {});
+    if (Object.keys(mergedHeaders).length > 0) {
+      data.headers = mergedHeaders;
+      args[1].headers = mergedHeaders;
     }
     return ajax_tools_space.originalFetch(...args).then(async (response) => {
       let overrideText = undefined;

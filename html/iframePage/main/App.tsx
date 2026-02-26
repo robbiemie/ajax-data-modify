@@ -8,8 +8,11 @@ import ModifyNav from './components/ModifyNav';
 import RenderWrapper from './components/RenderWrapper';
 import { useToggle } from './hooks/useToggle';
 import { useRegistry } from './hooks/useRegistry';
+import { usePageHeaders } from './hooks/usePageHeaders';
 import { CollapseList } from './components/CollapseList';
 import { CollapseHeader } from './components/CollapseHeader';
+import PageHeadersModal from './components/PageHeadersModal';
+import GlobalControlDock, { GlobalSwitchItem } from './components/GlobalControlDock';
 
 function App() {
   const modifyDataModalRef = useRef<any>({});
@@ -44,6 +47,22 @@ function App() {
     onInterfaceListChange,
     onGroupSummaryTextChange
   } = useRegistry();
+  const {
+    visible: pageHeadersVisible,
+    enabled: pageHeadersEnabled,
+    quickEnabled: pageHeadersQuickEnabled,
+    quickToggling: pageHeadersQuickToggling,
+    pageOrigin,
+    headerPairs,
+    setVisible: setPageHeadersVisible,
+    setEnabled: setPageHeadersEnabled,
+    addHeaderPair,
+    removeHeaderPair,
+    updateHeaderPair,
+    openModal: openPageHeadersModal,
+    save: savePageHeaders,
+    toggleQuickEnabled: togglePageHeadersQuickEnabled,
+  } = usePageHeaders();
 
   if (chrome.storage && chrome.runtime && !isRegistry) {
     setIsRegistry(true);
@@ -82,6 +101,32 @@ function App() {
     setAjaxToolsExpandAll(value);
   };
 
+  const globalSwitchItems: GlobalSwitchItem[] = [
+    {
+      key: 'global-switch',
+      label: 'Global Interceptor',
+      checked: ajaxToolsSwitchOn,
+      checkedText: 'On',
+      uncheckedText: 'Off',
+      onChange: (value) => {
+        if(!chrome.storage) return;
+        updateAjaxToolsSwitchOn(value);
+        chrome.storage.local.set({ ajaxToolsSwitchOn: value });
+      }
+    },
+    {
+      key: 'page-header-switch',
+      label: 'Current Page Header',
+      checked: pageHeadersQuickEnabled,
+      loading: pageHeadersQuickToggling,
+      checkedText: 'On',
+      uncheckedText: 'Off',
+      onChange: (value) => {
+        void togglePageHeadersQuickEnabled(value);
+      }
+    }
+  ];
+
   return (
     <div
       className="ajax-tools-iframe-container"
@@ -89,12 +134,12 @@ function App() {
         filter: ajaxToolsSkin === 'dark' ? 'invert(1)' : undefined
       }}
     >
+      <GlobalControlDock items={globalSwitchItems} />
       <ModifyNav
-        ajaxToolsSwitchOn={ajaxToolsSwitchOn}
         ajaxToolsExpandAll={ajaxToolsExpandAll}
-        updateAjaxToolsSwitchOn={updateAjaxToolsSwitchOn}
         updateAjaxToolsExpandAll={updateAjaxToolsExpandAll}
         onGroupAdd={onGroupAdd}
+        onPageHeadersOpen={openPageHeadersModal}
       />
 
       <RenderWrapper
@@ -146,6 +191,18 @@ function App() {
       </RenderWrapper>
       <Footer />
       <ModifyDataModal ref={modifyDataModalRef} onSave={onInterfaceListSave} />
+      <PageHeadersModal
+        visible={pageHeadersVisible}
+        enabled={pageHeadersEnabled}
+        pageOrigin={pageOrigin}
+        headerPairs={headerPairs}
+        setVisible={setPageHeadersVisible}
+        setEnabled={setPageHeadersEnabled}
+        addHeaderPair={addHeaderPair}
+        removeHeaderPair={removeHeaderPair}
+        updateHeaderPair={updateHeaderPair}
+        onSave={savePageHeaders}
+      />
     </div>
   );
 }

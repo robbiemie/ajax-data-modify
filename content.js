@@ -287,7 +287,7 @@ if (window.self === window.top) {
       const _actionBar = actionBar(container);
       container.appendChild(_actionBar);
       const iframe = document.createElement('iframe');
-      iframe.src = chrome.runtime.getURL("html/iframePage/dist/index.html");
+      iframe.src = chrome.runtime.getURL(`html/iframePage/dist/index.html?pageOrigin=${encodeURIComponent(window.location.origin)}`);
       iframe.className='robbie-ajax-interceptor-iframe';
       container.appendChild(iframe);
       if (document.body) document.body.appendChild(container);
@@ -321,4 +321,3 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
     }
   }
 });
-
